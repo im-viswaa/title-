@@ -4,11 +4,14 @@ import pandas as pd
 import os
 import traceback
 
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
 CORS(app)
+
+# Load AI Model
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_PATH = os.path.join(BASE_DIR, "..", "database.xlsx")
@@ -17,7 +20,7 @@ EXCEL_PATH = os.path.join(BASE_DIR, "..", "database.xlsx")
 @app.route("/")
 def home():
     return jsonify({
-        "message": "AI Title Similarity Detection System"
+        "message": "AI-Powered Project Title Validation System"
     })
 
 
@@ -40,13 +43,6 @@ def check_title():
                 "error": "Title is required"
             }), 400
 
-        print("BASE_DIR =", BASE_DIR)
-        print("EXCEL_PATH =", EXCEL_PATH)
-        print("FILE EXISTS =", os.path.exists(EXCEL_PATH))
-
-        if os.path.exists(EXCEL_PATH):
-            print("FILE SIZE =", os.path.getsize(EXCEL_PATH))
-
         if not os.path.exists(EXCEL_PATH):
             return jsonify({
                 "error": f"Database file not found: {EXCEL_PATH}"
@@ -62,7 +58,12 @@ def check_title():
                 "error": "Column 'Project Title' not found in database.xlsx"
             }), 500
 
-        existing_titles = df["Project Title"].dropna().astype(str).tolist()
+        existing_titles = (
+            df["Project Title"]
+            .dropna()
+            .astype(str)
+            .tolist()
+        )
 
         if len(existing_titles) == 0:
             return jsonify({
@@ -71,30 +72,58 @@ def check_title():
 
         all_titles = existing_titles + [title]
 
-        vectorizer = TfidfVectorizer()
-        vectors = vectorizer.fit_transform(all_titles)
+        # AI Embeddings
+        embeddings = model.encode(all_titles)
 
         similarity_scores = cosine_similarity(
-            vectors[-1],
-            vectors[:-1]
+            [embeddings[-1]],
+            embeddings[:-1]
         )[0]
 
-        best_index = similarity_scores.argmax()
+        results = []
 
-        similarity = float(
-            similarity_scores[best_index] * 100
+        for existing_title, score in zip(
+            existing_titles,
+            similarity_scores
+        ):
+            results.append({
+                "title": existing_title,
+                "similarity": round(float(score * 100), 2)
+            })
+
+        results.sort(
+            key=lambda x: x["similarity"],
+            reverse=True
         )
 
-        matched_title = existing_titles[best_index]
+        top_matches = results[:5]
 
-        if similarity >= 70:
+        max_similarity = (
+            top_matches[0]["similarity"]
+            if top_matches else 0
+        )
+
+        matched_title = (
+            top_matches[0]["title"]
+            if top_matches else "No Match"
+        )
+
+        novelty_score = round(
+            100 - max_similarity,
+            2
+        )
+
+        if max_similarity >= 70:
             status = "Rejected"
+            risk_level = "High"
 
-        elif similarity >= 40:
+        elif max_similarity >= 40:
             status = "Needs Review"
+            risk_level = "Medium"
 
         else:
             status = "Accepted"
+            risk_level = "Low"
 
             new_row = pd.DataFrame({
                 "Project Title": [title]
@@ -110,11 +139,93 @@ def check_title():
                 index=False
             )
 
+        # Domain Detection
+        title_lower = title.lower()
+
+        if any(
+            keyword in title_lower
+            for keyword in [
+                "ai",
+                "machine learning",
+                "deep learning",
+                "neural network"
+            ]
+        ):
+            domain = "Artificial Intelligence"
+
+        elif any(
+            keyword in title_lower
+            for keyword in [
+                "web",
+                "website",
+                "portal"
+            ]
+        ):
+            domain = "Web Development"
+
+        elif any(
+            keyword in title_lower
+            for keyword in [
+                "iot",
+                "sensor",
+                "arduino"
+            ]
+        ):
+            domain = "Internet of Things"
+
+        elif any(
+            keyword in title_lower
+            for keyword in [
+                "cloud",
+                "aws",
+                "azure"
+            ]
+        ):
+            domain = "Cloud Computing"
+
+        elif any(
+            keyword in title_lower
+            for keyword in [
+                "security",
+                "cyber",
+                "encryption"
+            ]
+        ):
+            domain = "Cyber Security"
+
+        else:
+            domain = "General"
+
+        # AI Suggestions
+        suggestions = [
+            f"Smart {title}",
+            f"Advanced {title}",
+            f"AI Powered {title}"
+        ]
+
         return jsonify({
+
             "entered_title": title,
+
             "matched_title": matched_title,
-            "similarity": round(similarity, 2),
-            "status": status
+
+            "similarity": round(
+                max_similarity,
+                2
+            ),
+
+            "novelty_score": novelty_score,
+
+            "risk_level": risk_level,
+
+            "domain": domain,
+
+            "status": status,
+
+            "top_matches": top_matches,
+
+            "suggestions": suggestions
+
         })
 
     except Exception as e:
@@ -127,7 +238,13 @@ def check_title():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            10000
+        )
+    )
 
     app.run(
         host="0.0.0.0",
