@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Title Similarity Detector</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="left-panel">
+
+        <div class="logo">🧠</div>
+
+        <h2>Similarity Analysis</h2>
+
+        <div class="score-circle">
+            <span id="scoreValue">0%</span>
+        </div>
+
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <div class="analysis-info">
+            <h4>Analysis Based On</h4>
+
+            <ul>
+                <li>Keyword Matching</li>
+                <li>TF-IDF Vectorization</li>
+                <li>Cosine Similarity</li>
+                <li>Project Database Comparison</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="right-panel">
+
+        <h1>AI Title Similarity Detector</h1>
+
+        <p class="subtitle">
+            Intelligent Project Title Validation System
+        </p>
+
+        <input
+            type="text"
+            id="title"
+            placeholder="Enter your project title..."
+        >
+
+        <button onclick="checkTitle()">
+            Analyze Title
+        </button>
+       
+        <div id="result"></div>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
