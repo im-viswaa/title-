@@ -34,8 +34,6 @@ def check_title():
 
         title = data.get("title", "").strip()
 
-        print("Received Title:", title)
-
         if not title:
             return jsonify({
                 "error": "Title is required"
@@ -63,7 +61,6 @@ def check_title():
         all_titles = existing_titles + [title]
 
         vectorizer = TfidfVectorizer()
-
         vectors = vectorizer.fit_transform(all_titles)
 
         similarity_scores = cosine_similarity(
@@ -103,18 +100,10 @@ def check_title():
             )
 
         return jsonify({
-
             "entered_title": title,
-
             "matched_title": matched_title,
-
-            "similarity": round(
-                similarity,
-                2
-            ),
-
+            "similarity": round(similarity, 2),
             "status": status
-
         })
 
     except Exception as e:
@@ -125,15 +114,6 @@ def check_title():
             "error": str(e)
         }), 500
 
-
-if __name__ == "__main__":
-    app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=True
-    )import os
-
-import os
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
