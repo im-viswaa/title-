@@ -1,7 +1,4 @@
-
-
 async function checkTitle() {
-
 
     const title = document.getElementById("title").value;
 
@@ -15,7 +12,7 @@ async function checkTitle() {
         console.log("Sending request...");
 
         const response = await fetch(
-            "http://127.0.0.1:5000/check",
+            "https://title-gjvj.onrender.com/check",
             {
                 method: "POST",
                 headers: {
@@ -33,12 +30,17 @@ async function checkTitle() {
 
         console.log("Data:", data);
 
-        if(document.getElementById("scoreValue")){
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        if (document.getElementById("scoreValue")) {
             document.getElementById("scoreValue").innerText =
                 data.similarity + "%";
         }
 
-        if(document.getElementById("progressBar")){
+        if (document.getElementById("progressBar")) {
             document.getElementById("progressBar").style.width =
                 data.similarity + "%";
         }
@@ -87,7 +89,7 @@ async function checkTitle() {
 
         console.error("ERROR:", error);
 
-        alert("ERROR: " + error);
+        alert("Backend connection failed");
 
     }
 }
