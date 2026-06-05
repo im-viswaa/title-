@@ -4,14 +4,11 @@ import pandas as pd
 import os
 import traceback
 
-from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
 CORS(app)
-
-# Load AI Model
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 EXCEL_PATH = os.path.join(BASE_DIR, "..", "database.xlsx")
@@ -72,12 +69,14 @@ def check_title():
 
         all_titles = existing_titles + [title]
 
-        # AI Embeddings
-        embeddings = model.encode(all_titles)
+        # TF-IDF Similarity
+        vectorizer = TfidfVectorizer()
+
+        vectors = vectorizer.fit_transform(all_titles)
 
         similarity_scores = cosine_similarity(
-            [embeddings[-1]],
-            embeddings[:-1]
+            vectors[-1],
+            vectors[:-1]
         )[0]
 
         results = []
@@ -139,7 +138,6 @@ def check_title():
                 index=False
             )
 
-        # Domain Detection
         title_lower = title.lower()
 
         if any(
@@ -196,7 +194,6 @@ def check_title():
         else:
             domain = "General"
 
-        # AI Suggestions
         suggestions = [
             f"Smart {title}",
             f"Advanced {title}",
@@ -206,24 +203,13 @@ def check_title():
         return jsonify({
 
             "entered_title": title,
-
             "matched_title": matched_title,
-
-            "similarity": round(
-                max_similarity,
-                2
-            ),
-
+            "similarity": round(max_similarity, 2),
             "novelty_score": novelty_score,
-
             "risk_level": risk_level,
-
             "domain": domain,
-
             "status": status,
-
             "top_matches": top_matches,
-
             "suggestions": suggestions
 
         })
@@ -251,3 +237,4 @@ if __name__ == "__main__":
         port=port,
         debug=False
     )
+    
