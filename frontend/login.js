@@ -14,7 +14,7 @@ function login() {
     }
 
     // Demo Login
-    if (username === "admin" && password === "1234") {
+    if (username === "viswa" && password === "9211") {
 
         localStorage.setItem("loggedIn", "true");
         localStorage.setItem("username", username);
