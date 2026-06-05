@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import os
+import traceback
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -39,12 +40,22 @@ def check_title():
                 "error": "Title is required"
             }), 400
 
+        print("BASE_DIR =", BASE_DIR)
+        print("EXCEL_PATH =", EXCEL_PATH)
+        print("FILE EXISTS =", os.path.exists(EXCEL_PATH))
+
+        if os.path.exists(EXCEL_PATH):
+            print("FILE SIZE =", os.path.getsize(EXCEL_PATH))
+
         if not os.path.exists(EXCEL_PATH):
             return jsonify({
                 "error": f"Database file not found: {EXCEL_PATH}"
             }), 500
 
-        df = pd.read_excel(EXCEL_PATH)
+        df = pd.read_excel(
+            EXCEL_PATH,
+            engine="openpyxl"
+        )
 
         if "Project Title" not in df.columns:
             return jsonify({
@@ -108,7 +119,7 @@ def check_title():
 
     except Exception as e:
 
-        print("ERROR:", str(e))
+        traceback.print_exc()
 
         return jsonify({
             "error": str(e)
